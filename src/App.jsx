@@ -5,35 +5,42 @@ import axios from 'axios';
 
 const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api/chat';
 
-
 export default function App() {
   const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
 
   useEffect(() => {
-    const createSession = async () => {
-      const response = await axios.post(API_URL);
-      setSessionId(response.data.sessionId);
-    };
-    createSession();
+    const storedSession = localStorage.getItem('chatSessionId');
+    if (storedSession) {
+      setSessionId(storedSession);
+      fetchMessagesFromSession(storedSession);
+    } else {
+      createSession();
+    }
   }, []);
 
-  const fetchMessages = async () => {
-    if (sessionId) {
-      const response = await axios.get(`${API_URL}/${sessionId}/messages`);
-      setMessages(response.data);
-    }
+  const createSession = async () => {
+    const response = await axios.post(API_URL);
+    const newSessionId = response.data.sessionId;
+    setSessionId(newSessionId);
+    localStorage.setItem('chatSessionId', newSessionId);
+    fetchMessagesFromSession(newSessionId);
+  };
+
+  const fetchMessagesFromSession = async (id) => {
+    const response = await axios.get(`${API_URL}/${id}/messages`);
+    setMessages(response.data);
   };
 
   const sendMessage = async () => {
-    if (text.trim()) {
+    if (text.trim() && sessionId) {
       await axios.post(`${API_URL}/${sessionId}/message`, {
         sender: 'Usuário',
         text
       });
       setText('');
-      fetchMessages();
+      fetchMessagesFromSession(sessionId);
     }
   };
 
