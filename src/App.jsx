@@ -45,36 +45,38 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa] flex flex-col items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md bg-white border border-[#e0e6ed] rounded-2xl shadow-md overflow-hidden">
-        <div className="bg-[#0669F7] px-4 py-3 text-white text-lg font-semibold rounded-t-2xl">
+    <div className="min-h-screen bg-[#f4f6f9] flex items-center justify-center p-4 font-sans">
+      <div className="w-full max-w-lg bg-white rounded-xl shadow-lg flex flex-col">
+        <header className="bg-[#0669F7] text-white text-xl font-semibold p-4 rounded-t-xl shadow-md">
           Chat Online
-        </div>
-        <div className="h-[400px] overflow-y-auto px-4 py-3 flex flex-col space-y-2 bg-[#f9fbfd]">
+        </header>
+
+        <div className="h-[400px] overflow-y-auto p-4 space-y-3 bg-[#f9fbfc]">
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`max-w-[75%] px-4 py-2 rounded-xl text-sm whitespace-pre-wrap shadow-sm
+              className={`max-w-[75%] px-4 py-2 text-sm rounded-lg shadow-sm whitespace-pre-wrap
                 ${msg.sender === 'Usuário'
                   ? 'ml-auto bg-[#0669F7] text-white'
-                  : 'mr-auto bg-white border border-[#dce3ec] text-[#333]'}
+                  : 'mr-auto bg-[#e9f1ff] text-[#1e1e1e]'}
               `}
             >
               {msg.text}
             </div>
           ))}
         </div>
-        <div className="flex border-t border-[#e0e6ed]">
+
+        <div className="flex border-t border-gray-200">
           <input
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="flex-1 px-4 py-2 text-sm outline-none rounded-bl-2xl"
+            className="flex-1 px-4 py-2 text-sm outline-none placeholder-gray-400"
             placeholder="Digite sua mensagem..."
           />
           <button
             onClick={sendMessage}
-            className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-4 py-2 rounded-br-2xl"
+            className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-6 py-2"
           >
             Enviar
           </button>
