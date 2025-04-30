@@ -37,6 +37,7 @@ export default function App() {
     if (text.trim() && sessionId) {
       await axios.post(`${API_URL}/${sessionId}/message`, {
         sender: 'Usuário',
+        senderName: 'Você',
         text
       });
       setText('');
@@ -55,12 +56,17 @@ export default function App() {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`max-w-[75%] px-4 py-2 text-sm rounded-lg shadow-sm whitespace-pre-wrap
+              className={`flex flex-col max-w-[75%] px-4 py-2 text-sm rounded-lg shadow-sm whitespace-pre-wrap
                 ${msg.sender === 'Usuário'
                   ? 'ml-auto bg-[#0669F7] text-white'
                   : 'mr-auto bg-[#e9f1ff] text-[#1e1e1e]'}
               `}
             >
+              {msg.senderName && (
+                <span className="text-xs font-semibold mb-1 text-[#888]">
+                  {msg.senderName}
+                </span>
+              )}
               {msg.text}
             </div>
           ))}
