@@ -45,30 +45,36 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center p-4">
-      <h1 className="text-2xl font-bold text-[#0669F7] mb-4">Chat Online</h1>
-      <div className="w-full max-w-md border border-[#207CFF] rounded-lg p-4 flex flex-col">
-        <div className="flex-1 overflow-y-auto mb-4">
+    <div className="min-h-screen bg-[#f5f7fa] flex flex-col items-center justify-center p-4 font-sans">
+      <div className="w-full max-w-md bg-white border border-[#e0e6ed] rounded-2xl shadow-md overflow-hidden">
+        <div className="bg-[#0669F7] px-4 py-3 text-white text-lg font-semibold rounded-t-2xl">
+          Chat Online
+        </div>
+        <div className="h-[400px] overflow-y-auto px-4 py-3 flex flex-col space-y-2 bg-[#f9fbfd]">
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`mb-2 p-2 rounded-lg ${msg.sender === 'Usuário' ? 'bg-[#0669F7] text-white self-end' : 'bg-gray-200 self-start'}`}
+              className={`max-w-[75%] px-4 py-2 rounded-xl text-sm whitespace-pre-wrap shadow-sm
+                ${msg.sender === 'Usuário'
+                  ? 'ml-auto bg-[#0669F7] text-white'
+                  : 'mr-auto bg-white border border-[#dce3ec] text-[#333]'}
+              `}
             >
-              <p className="text-sm">{msg.text}</p>
+              {msg.text}
             </div>
           ))}
         </div>
-        <div className="flex">
+        <div className="flex border-t border-[#e0e6ed]">
           <input
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="flex-1 border border-[#207CFF] rounded-l-lg p-2 outline-none"
+            className="flex-1 px-4 py-2 text-sm outline-none rounded-bl-2xl"
             placeholder="Digite sua mensagem..."
           />
           <button
             onClick={sendMessage}
-            className="bg-[#0669F7] hover:bg-[#1469E3] text-white px-4 rounded-r-lg"
+            className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-4 py-2 rounded-br-2xl"
           >
             Enviar
           </button>
