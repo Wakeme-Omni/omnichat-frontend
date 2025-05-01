@@ -36,8 +36,8 @@ export default function App() {
   const sendMessage = async () => {
     if (text.trim() && sessionId) {
       await axios.post(`${API_URL}/${sessionId}/message`, {
-        sender: 'Usuário',
-        senderName: 'Você',
+        sender: 'Usuário: ',
+        senderName: 'Você: ',
         text
       });
       setText('');
