@@ -48,7 +48,7 @@ export default function PainelAtendente({ onVoltar }) {
     setSelectedSession(sessionId);
     setVisualizadasPorSessao((prev) => ({
       ...prev,
-      [sessionId]: totalMessagesPorSessao[sessionId] || 0
+      [sessionId]: totalMessagesPorSessao[sessionId] || response.data.length || 0
     }));
   };
 
@@ -60,7 +60,12 @@ export default function PainelAtendente({ onVoltar }) {
         text
       });
       setText('');
-      loadMessages(selectedSession);
+      const updated = await axios.get(`${API_URL}/chat/${selectedSession}/messages`);
+      setMessages(updated.data);
+      setVisualizadasPorSessao((prev) => ({
+        ...prev,
+        [selectedSession]: updated.data.length
+      }));
     }
   };
 
