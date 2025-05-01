@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import PainelAtendente from './PainelAtendente';
 
 const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api/chat';
 
@@ -9,6 +10,7 @@ export default function App() {
   const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
+  const [modoAtendente, setModoAtendente] = useState(false);
 
   useEffect(() => {
     const storedSession = localStorage.getItem('chatSessionId');
@@ -45,11 +47,16 @@ export default function App() {
     }
   };
 
+  if (modoAtendente) return <PainelAtendente onVoltar={() => setModoAtendente(false)} />;
+
   return (
     <div className="min-h-screen bg-[#f4f6f9] flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-lg bg-white rounded-xl shadow-lg flex flex-col">
-        <header className="bg-[#0669F7] text-white text-xl font-semibold p-4 rounded-t-xl shadow-md">
-          Chat Online
+        <header className="bg-[#0669F7] text-white text-xl font-semibold p-4 rounded-t-xl shadow-md flex justify-between items-center">
+          <span>Chat Online</span>
+          <button onClick={() => setModoAtendente(true)} className="text-sm bg-white text-[#0669F7] px-3 py-1 rounded font-medium shadow">
+            Painel do Atendente
+          </button>
         </header>
 
         <div className="h-[400px] overflow-y-auto p-4 space-y-3 bg-[#f9fbfc]">
@@ -57,7 +64,7 @@ export default function App() {
             <div
               key={msg.id}
               className={`flex flex-col max-w-[75%] px-4 py-2 text-sm rounded-lg shadow-sm whitespace-pre-wrap
-                ${msg.sender === 'Usuário'
+                ${msg.sender === 'Usuário: '
                   ? 'ml-auto bg-[#0669F7] text-white'
                   : 'mr-auto bg-[#e9f1ff] text-[#1e1e1e]'}
               `}
