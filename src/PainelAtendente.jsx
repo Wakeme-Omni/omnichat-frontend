@@ -72,6 +72,15 @@ export default function PainelAtendente({ onVoltar }) {
     }
   };
 
+  const encerrarSessao = async () => {
+    if (selectedSession) {
+      await axios.post(`${API_URL}/chat/${selectedSession}/end`);
+      await fetchSessions();
+      setSelectedSession(null);
+      setMessages([]);
+    }
+  };
+
   const handleChangeAtendente = (e) => {
     setAtendente(e.target.value);
     localStorage.setItem('atendenteNome', e.target.value);
@@ -97,11 +106,14 @@ export default function PainelAtendente({ onVoltar }) {
     return matchKeyword && afterStart && beforeEnd;
   });
 
+  const sessionsAtivas = sessions.filter(s => s.status !== 'encerrada');
+  const sessionsEncerradas = sessions.filter(s => s.status === 'encerrada');
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center p-4 font-sans">
       <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg grid grid-cols-3">
         <aside className="col-span-1 border-r border-gray-200 p-4">
-          <h2 className="text-lg font-semibold mb-4">Sessões</h2>
+          <h2 className="text-lg font-semibold mb-4">Sessões Ativas</h2>
           <div className="mb-4">
             <label className="block text-sm text-gray-700 mb-1">Nome do atendente</label>
             <input
@@ -112,18 +124,19 @@ export default function PainelAtendente({ onVoltar }) {
               placeholder="Digite seu nome..."
             />
           </div>
-          {sessions.map((session) => {
+          {[...sessionsAtivas, ...sessionsEncerradas].map((session) => {
             const total = totalMessagesPorSessao[session.sessionId] || 0;
             const visualizadas = visualizadasPorSessao[session.sessionId] || 0;
             const hasNew = total > visualizadas && selectedSession !== session.sessionId;
+            const isEncerrada = session.status === 'encerrada';
             return (
               <button
                 key={session.sessionId}
                 onClick={() => loadMessages(session.sessionId)}
-                className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border ${selectedSession === session.sessionId ? 'bg-[#0669F7] text-white' : 'bg-gray-100 text-gray-800'}`}
+                className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border ${selectedSession === session.sessionId ? 'bg-[#0669F7] text-white' : isEncerrada ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-800'}`}
               >
                 Sessão {session.sessionId.slice(0, 8)}...{' '}
-                {hasNew && <span className="text-red-500">🔴</span>}<br />
+                {hasNew && !isEncerrada && <span className="text-red-500">🔴</span>}<br />
                 <span className="text-xs text-gray-500">{session.lastMessage}</span>
               </button>
             );
@@ -198,6 +211,12 @@ export default function PainelAtendente({ onVoltar }) {
                 className="bg-gray-200 hover:bg-gray-300 text-sm text-gray-700 px-4 py-2 rounded-md"
               >
                 Exportar
+              </button>
+              <button
+                onClick={encerrarSessao}
+                className="bg-red-100 hover:bg-red-200 text-sm text-red-600 px-4 py-2 rounded-md"
+              >
+                Encerrar
               </button>
             </div>
           )}
