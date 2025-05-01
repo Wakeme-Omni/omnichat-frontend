@@ -29,34 +29,42 @@ export default function App() {
   }, [sessionId]);
 
   const fetchMessages = async () => {
-    const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
-    setMessages(response.data);
+    try {
+      const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
+      setMessages(response.data);
 
-    const encerrada = response.data.some(msg =>
-      msg.text.toLowerCase().includes('esta conversa foi encerrada')
-    );
-    setIsSessionClosed(encerrada);
+      const encerrada = response.data.some(msg =>
+        msg.text.toLowerCase().includes('esta conversa foi encerrada')
+      );
+      setIsSessionClosed(encerrada);
+    } catch (error) {
+      console.error('Erro ao buscar mensagens:', error);
+    }
   };
 
   const sendMessage = async () => {
     if (text.trim() && !isSessionClosed) {
-      await axios.post(`${API_URL}/${sessionId}/message`, {
-        sender: 'Usuário: ',
-        senderName: 'Você: ',
-        text
-      });
-      setText('');
-      fetchMessages();
+      try {
+        await axios.post(`${API_URL}/${sessionId}/message`, {
+          sender: 'Usuário: ',
+          senderName: 'Você: ',
+          text
+        });
+        setText('');
+        await fetchMessages();
+      } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+      }
     }
   };
 
   if (modoAtendente) {
-    return <PainelAtendente onVoltar={() => setModoAtendente(false)} />;
+    return <PainelAtendente onVoltar={() => setModoAtendente(false)} forceSessionUpdate={fetchMessages} sessionId={sessionId} />;
   }
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center p-4">
-      <h1 className="text-2xl font-bold text-[#0669F7] mb-4">Chat Online</h1>
+      <h1 className="text-2xl font-bold text-[#0669F7] mb-2">Chat Online</h1>
       <button
         onClick={() => setModoAtendente(true)}
         className="mb-4 text-sm text-[#0669F7] underline"
@@ -68,10 +76,10 @@ export default function App() {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`mb-2 p-2 rounded-lg ${msg.sender === 'Usuário: ' ? 'bg-[#0669F7] text-white self-end' : 'bg-gray-200 self-start'}`}
+              className={`mb-2 p-2 rounded-lg whitespace-pre-wrap ${msg.sender === 'Usuário: ' ? 'bg-[#0669F7] text-white self-end' : 'bg-gray-200 self-start'}`}
             >
-              <p className="text-sm font-semibold text-gray-700">{msg.senderName}</p>
-              <p className="text-sm">{msg.text}</p>
+              <span className="text-sm font-semibold block mb-1">{msg.senderName} <span className="text-gray-400">- {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></span>
+              <span className="text-sm">{msg.text}</span>
             </div>
           ))}
         </div>

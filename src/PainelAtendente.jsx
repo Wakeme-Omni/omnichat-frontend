@@ -22,9 +22,12 @@ export default function PainelAtendente({ onVoltar }) {
     fetchSessions();
     const interval = setInterval(() => {
       refreshSessions();
+      if (selectedSession) {
+        loadMessages(selectedSession, true);
+      }
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedSession]);
 
   const fetchSessions = async () => {
     const response = await axios.get(`${API_URL}/sessions`);
@@ -46,15 +49,15 @@ export default function PainelAtendente({ onVoltar }) {
     setTotalMessagesPorSessao(totals);
   };
 
-  const loadMessages = async (sessionId) => {
+  const loadMessages = async (sessionId, silent = false) => {
     const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
     setMessages(response.data);
-    setSelectedSession(sessionId);
+    if (!silent) setSelectedSession(sessionId);
     const sessao = sessions.find(s => s.sessionId === sessionId);
     setSessaoEncerrada(sessao?.status === 'encerrada');
     setVisualizadasPorSessao((prev) => ({
       ...prev,
-      [sessionId]: totalMessagesPorSessao[sessionId] || response.data.length || 0
+      [sessionId]: response.data.length
     }));
   };
 
@@ -66,12 +69,7 @@ export default function PainelAtendente({ onVoltar }) {
         text
       });
       setText('');
-      const updated = await axios.get(`${API_URL}/chat/${selectedSession}/messages`);
-      setMessages(updated.data);
-      setVisualizadasPorSessao((prev) => ({
-        ...prev,
-        [selectedSession]: updated.data.length
-      }));
+      await loadMessages(selectedSession);
     }
   };
 
@@ -87,11 +85,6 @@ export default function PainelAtendente({ onVoltar }) {
       setSelectedSession(null);
       setMessages([]);
     }
-  };
-
-  const handleChangeAtendente = (e) => {
-    setAtendente(e.target.value);
-    localStorage.setItem('atendenteNome', e.target.value);
   };
 
   const exportarConversa = () => {
@@ -127,7 +120,10 @@ export default function PainelAtendente({ onVoltar }) {
             <input
               type="text"
               value={atendente}
-              onChange={handleChangeAtendente}
+              onChange={(e) => {
+                setAtendente(e.target.value);
+                localStorage.setItem('atendenteNome', e.target.value);
+              }}
               className="w-full border border-gray-300 px-2 py-1 text-sm rounded"
               placeholder="Digite seu nome..."
             />
