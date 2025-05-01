@@ -63,11 +63,11 @@ export default function App() {
               `}
             >
               {msg.senderName && (
-                <span className="text-xs font-semibold mb-1 text-[#888]">
+                <span className="text-xs font-semibold mb-1 text-gray-500">
                   {msg.senderName}
                 </span>
               )}
-              {msg.text}
+              <span>{msg.text}</span>
             </div>
           ))}
         </div>
