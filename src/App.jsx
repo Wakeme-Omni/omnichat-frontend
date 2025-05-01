@@ -2,18 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import PainelAtendente from './PainelAtendente';
 
-const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api/chat';
+const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api';
 
 export default function App() {
   const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [isSessionClosed, setIsSessionClosed] = useState(false);
+  const [modoAtendente, setModoAtendente] = useState(false);
 
   useEffect(() => {
     const createSession = async () => {
-      const response = await axios.post(API_URL);
+      const response = await axios.post(`${API_URL}/chat`);
       setSessionId(response.data.sessionId);
     };
     createSession();
@@ -27,7 +29,7 @@ export default function App() {
   }, [sessionId]);
 
   const fetchMessages = async () => {
-    const response = await axios.get(`${API_URL}/${sessionId}/messages`);
+    const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
     setMessages(response.data);
 
     const encerrada = response.data.some(msg =>
@@ -48,9 +50,19 @@ export default function App() {
     }
   };
 
+  if (modoAtendente) {
+    return <PainelAtendente onVoltar={() => setModoAtendente(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col items-center p-4">
       <h1 className="text-2xl font-bold text-[#0669F7] mb-4">Chat Online</h1>
+      <button
+        onClick={() => setModoAtendente(true)}
+        className="mb-4 text-sm text-[#0669F7] underline"
+      >
+        Acessar Painel do Atendente
+      </button>
       <div className="w-full max-w-md border border-[#207CFF] rounded-lg p-4 flex flex-col">
         <div className="flex-1 overflow-y-auto mb-4">
           {messages.map((msg) => (
