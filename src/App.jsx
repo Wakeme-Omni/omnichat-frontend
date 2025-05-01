@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import PainelAtendente from './PainelAtendente';
 
 const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api/chat';
 
@@ -10,94 +9,72 @@ export default function App() {
   const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
-  const [modoAtendente, setModoAtendente] = useState(false);
+  const [isSessionClosed, setIsSessionClosed] = useState(false);
 
   useEffect(() => {
-    const storedSession = localStorage.getItem('chatSessionId');
-    if (storedSession) {
-      setSessionId(storedSession);
-      fetchMessagesFromSession(storedSession);
-    } else {
-      createSession();
-    }
+    const createSession = async () => {
+      const response = await axios.post(API_URL);
+      setSessionId(response.data.sessionId);
+    };
+    createSession();
   }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (sessionId) {
-        fetchMessagesFromSession(sessionId);
-      }
+      if (sessionId) fetchMessages();
     }, 4000);
     return () => clearInterval(interval);
   }, [sessionId]);
 
-  const createSession = async () => {
-    const response = await axios.post(API_URL);
-    const newSessionId = response.data.sessionId;
-    setSessionId(newSessionId);
-    localStorage.setItem('chatSessionId', newSessionId);
-    fetchMessagesFromSession(newSessionId);
-  };
-
-  const fetchMessagesFromSession = async (id) => {
-    const response = await axios.get(`${API_URL}/${id}/messages`);
+  const fetchMessages = async () => {
+    const response = await axios.get(`${API_URL}/${sessionId}/messages`);
     setMessages(response.data);
+
+    const encerrada = response.data.some(msg =>
+      msg.text.toLowerCase().includes('esta conversa foi encerrada')
+    );
+    setIsSessionClosed(encerrada);
   };
 
   const sendMessage = async () => {
-    if (text.trim() && sessionId) {
+    if (text.trim() && !isSessionClosed) {
       await axios.post(`${API_URL}/${sessionId}/message`, {
         sender: 'Usuário: ',
         senderName: 'Você: ',
         text
       });
       setText('');
-      fetchMessagesFromSession(sessionId);
+      fetchMessages();
     }
   };
 
-  if (modoAtendente) return <PainelAtendente onVoltar={() => setModoAtendente(false)} />;
-
   return (
-    <div className="min-h-screen bg-[#f4f6f9] flex items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-lg bg-white rounded-xl shadow-lg flex flex-col">
-        <header className="bg-[#0669F7] text-white text-xl font-semibold p-4 rounded-t-xl shadow-md flex justify-between items-center">
-          <span>Chat Online</span>
-          <button onClick={() => setModoAtendente(true)} className="text-sm bg-white text-[#0669F7] px-3 py-1 rounded font-medium shadow">
-            Painel do Atendente
-          </button>
-        </header>
-
-        <div className="h-[400px] overflow-y-auto p-4 space-y-3 bg-[#f9fbfc]">
+    <div className="min-h-screen bg-white flex flex-col items-center p-4">
+      <h1 className="text-2xl font-bold text-[#0669F7] mb-4">Chat Online</h1>
+      <div className="w-full max-w-md border border-[#207CFF] rounded-lg p-4 flex flex-col">
+        <div className="flex-1 overflow-y-auto mb-4">
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex flex-col max-w-[75%] px-4 py-2 text-sm rounded-lg shadow-sm whitespace-pre-wrap
-                ${msg.sender === 'Usuário: '
-                  ? 'ml-auto bg-[#0669F7] text-white'
-                  : 'mr-auto bg-[#e9f1ff] text-[#1e1e1e]'}
-              `}
+              className={`mb-2 p-2 rounded-lg ${msg.sender === 'Usuário: ' ? 'bg-[#0669F7] text-white self-end' : 'bg-gray-200 self-start'}`}
             >
-              {msg.senderName && (
-                <span className="text-xs font-semibold mb-1 text-gray-500">
-                  {msg.senderName}
-                </span>
-              )}
-              <span>{msg.text}</span>
+              <p className="text-sm font-semibold text-gray-700">{msg.senderName}</p>
+              <p className="text-sm">{msg.text}</p>
             </div>
           ))}
         </div>
-
-        <div className="flex border-t border-gray-200">
+        <div className="flex">
           <input
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
+            disabled={isSessionClosed}
             className="flex-1 border border-[#207CFF] rounded-l-lg p-2 outline-none"
-            placeholder="Digite sua mensagem..."
+            placeholder={isSessionClosed ? 'Conversa encerrada. Inicie um novo atendimento.' : 'Digite sua mensagem...'}
           />
           <button
             onClick={sendMessage}
+            disabled={isSessionClosed}
             className="bg-[#0669F7] hover:bg-[#1469E3] text-white px-4 rounded-r-lg"
           >
             Enviar
