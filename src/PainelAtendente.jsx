@@ -77,6 +77,18 @@ export default function PainelAtendente({ onVoltar }) {
     localStorage.setItem('atendenteNome', e.target.value);
   };
 
+  const exportarConversa = () => {
+    if (!messages.length) return;
+    const conteudo = messages.map(m => `${m.senderName || m.sender} ${new Date(m.timestamp).toLocaleTimeString()} - ${m.text}`).join('\n');
+    const blob = new Blob([conteudo], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `conversa-${selectedSession}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filteredMessages = messages.filter((msg) => {
     const matchKeyword = msg.text.toLowerCase().includes(filter.toLowerCase());
     const msgDate = new Date(msg.timestamp);
@@ -157,8 +169,8 @@ export default function PainelAtendente({ onVoltar }) {
                 `}
               >
                 {msg.senderName && (
-                  <span className="text-xs font-semibold mb-1 block text-gray-500">
-                    {msg.senderName}
+                  <span className="text-xs font-semibold block text-gray-500">
+                    {msg.senderName} - {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 )}
                 {msg.text}
@@ -167,19 +179,25 @@ export default function PainelAtendente({ onVoltar }) {
           </div>
 
           {selectedSession && (
-            <div className="flex border-t border-gray-200 pt-2">
+            <div className="flex items-center justify-between border-t border-gray-200 pt-2 gap-2">
               <input
                 type="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                className="flex-1 px-4 py-2 text-sm outline-none border border-gray-300 rounded-l-md"
+                className="flex-1 px-4 py-2 text-sm outline-none border border-gray-300 rounded-md"
                 placeholder="Mensagem do atendente..."
               />
               <button
                 onClick={sendMessage}
-                className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-6 py-2 rounded-r-md"
+                className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-6 py-2 rounded-md"
               >
                 Enviar
+              </button>
+              <button
+                onClick={exportarConversa}
+                className="bg-gray-200 hover:bg-gray-300 text-sm text-gray-700 px-4 py-2 rounded-md"
+              >
+                Exportar
               </button>
             </div>
           )}
