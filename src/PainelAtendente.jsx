@@ -10,6 +10,9 @@ export default function PainelAtendente({ onVoltar }) {
   const [selectedSession, setSelectedSession] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
+  const [filter, setFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [atendente, setAtendente] = useState(localStorage.getItem('atendenteNome') || 'Ana');
   const [totalMessagesPorSessao, setTotalMessagesPorSessao] = useState({});
   const [visualizadasPorSessao, setVisualizadasPorSessao] = useState({});
@@ -54,7 +57,7 @@ export default function PainelAtendente({ onVoltar }) {
 
   const sendMessage = async () => {
     if (text.trim() && selectedSession) {
-      await axios.post(`${API_URL}/chat/${selectedSession}/message`, {
+      await axios.post(`${API_URL}/${selectedSession}/message`, {
         sender: 'Atendente: ',
         senderName: `${atendente}: `,
         text
@@ -73,6 +76,14 @@ export default function PainelAtendente({ onVoltar }) {
     setAtendente(e.target.value);
     localStorage.setItem('atendenteNome', e.target.value);
   };
+
+  const filteredMessages = messages.filter((msg) => {
+    const matchKeyword = msg.text.toLowerCase().includes(filter.toLowerCase());
+    const msgDate = new Date(msg.timestamp);
+    const afterStart = startDate ? msgDate >= new Date(startDate) : true;
+    const beforeEnd = endDate ? msgDate <= new Date(endDate + 'T23:59:59') : true;
+    return matchKeyword && afterStart && beforeEnd;
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center p-4 font-sans">
@@ -113,8 +124,30 @@ export default function PainelAtendente({ onVoltar }) {
         <main className="col-span-2 p-4 flex flex-col">
           <h2 className="text-lg font-semibold mb-2">Mensagens</h2>
 
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <input
+              type="text"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filtrar por palavra-chave..."
+              className="px-3 py-2 text-sm border border-gray-300 rounded col-span-1"
+            />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded col-span-1"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded col-span-1"
+            />
+          </div>
+
           <div className="flex-1 overflow-y-auto space-y-2 mb-4 bg-[#f9fbfc] p-3 rounded-lg border border-gray-200">
-            {messages.map((msg) => (
+            {filteredMessages.map((msg) => (
               <div
                 key={msg.id}
                 className={`max-w-[75%] px-4 py-2 text-sm rounded-lg shadow-sm whitespace-pre-wrap
