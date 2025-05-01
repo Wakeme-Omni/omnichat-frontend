@@ -22,6 +22,15 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (sessionId) {
+        fetchMessagesFromSession(sessionId);
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [sessionId]);
+
   const createSession = async () => {
     const response = await axios.post(API_URL);
     const newSessionId = response.data.sessionId;
@@ -84,12 +93,12 @@ export default function App() {
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="flex-1 px-4 py-2 text-sm outline-none placeholder-gray-400"
+            className="flex-1 border border-[#207CFF] rounded-l-lg p-2 outline-none"
             placeholder="Digite sua mensagem..."
           />
           <button
             onClick={sendMessage}
-            className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-6 py-2"
+            className="bg-[#0669F7] hover:bg-[#1469E3] text-white px-4 rounded-r-lg"
           >
             Enviar
           </button>
