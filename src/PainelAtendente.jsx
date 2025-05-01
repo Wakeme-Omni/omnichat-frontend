@@ -16,6 +16,7 @@ export default function PainelAtendente({ onVoltar }) {
   const [atendente, setAtendente] = useState(localStorage.getItem('atendenteNome') || 'Ana');
   const [totalMessagesPorSessao, setTotalMessagesPorSessao] = useState({});
   const [visualizadasPorSessao, setVisualizadasPorSessao] = useState({});
+  const [sessaoEncerrada, setSessaoEncerrada] = useState(false);
 
   useEffect(() => {
     fetchSessions();
@@ -49,6 +50,8 @@ export default function PainelAtendente({ onVoltar }) {
     const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
     setMessages(response.data);
     setSelectedSession(sessionId);
+    const sessao = sessions.find(s => s.sessionId === sessionId);
+    setSessaoEncerrada(sessao?.status === 'encerrada');
     setVisualizadasPorSessao((prev) => ({
       ...prev,
       [sessionId]: totalMessagesPorSessao[sessionId] || response.data.length || 0
@@ -56,7 +59,7 @@ export default function PainelAtendente({ onVoltar }) {
   };
 
   const sendMessage = async () => {
-    if (text.trim() && selectedSession) {
+    if (text.trim() && selectedSession && !sessaoEncerrada) {
       await axios.post(`${API_URL}/${selectedSession}/message`, {
         sender: 'Atendente: ',
         senderName: `${atendente}: `,
@@ -74,6 +77,11 @@ export default function PainelAtendente({ onVoltar }) {
 
   const encerrarSessao = async () => {
     if (selectedSession) {
+      await axios.post(`${API_URL}/${selectedSession}/message`, {
+        sender: 'Atendente: ',
+        senderName: `${atendente}: `,
+        text: 'Esta conversa foi encerrada. Caso precise de mais ajuda, inicie uma nova conversa no chat. 😊'
+      });
       await axios.post(`${API_URL}/chat/${selectedSession}/end`);
       await fetchSessions();
       setSelectedSession(null);
@@ -197,12 +205,14 @@ export default function PainelAtendente({ onVoltar }) {
                 type="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                disabled={sessaoEncerrada}
                 className="flex-1 px-4 py-2 text-sm outline-none border border-gray-300 rounded-md"
-                placeholder="Mensagem do atendente..."
+                placeholder={sessaoEncerrada ? 'Esta sessão foi encerrada.' : 'Mensagem do atendente...'}
               />
               <button
                 onClick={sendMessage}
-                className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-6 py-2 rounded-md"
+                disabled={sessaoEncerrada}
+                className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-6 py-2 rounded-md disabled:opacity-50"
               >
                 Enviar
               </button>
