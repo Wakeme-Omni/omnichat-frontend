@@ -10,10 +10,17 @@ export default function PainelAtendente({ onVoltar }) {
   const [selectedSession, setSelectedSession] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
+  const [newMessageAlert, setNewMessageAlert] = useState(false);
 
   useEffect(() => {
     fetchSessions();
-  }, []);
+    const interval = setInterval(() => {
+      if (selectedSession) {
+        refreshMessages(selectedSession);
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [selectedSession]);
 
   const fetchSessions = async () => {
     const response = await axios.get(`${API_URL}/sessions`);
@@ -24,6 +31,15 @@ export default function PainelAtendente({ onVoltar }) {
     const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
     setMessages(response.data);
     setSelectedSession(sessionId);
+    setNewMessageAlert(false);
+  };
+
+  const refreshMessages = async (sessionId) => {
+    const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
+    if (response.data.length > messages.length) {
+      setMessages(response.data);
+      setNewMessageAlert(true);
+    }
   };
 
   const sendMessage = async () => {
@@ -60,6 +76,8 @@ export default function PainelAtendente({ onVoltar }) {
 
         <main className="col-span-2 p-4 flex flex-col">
           <h2 className="text-lg font-semibold mb-2">Mensagens</h2>
+          {newMessageAlert && <div className="text-sm text-red-600 mb-2">📩 Nova mensagem recebida</div>}
+
           <div className="flex-1 overflow-y-auto space-y-2 mb-4 bg-[#f9fbfc] p-3 rounded-lg border border-gray-200">
             {messages.map((msg) => (
               <div
