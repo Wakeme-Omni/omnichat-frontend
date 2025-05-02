@@ -16,18 +16,14 @@ export default function PainelAtendente({ onVoltar }) {
   const [atendente, setAtendente] = useState(localStorage.getItem('atendenteNome') || 'Ana');
   const [totalMessagesPorSessao, setTotalMessagesPorSessao] = useState({});
   const [visualizadasPorSessao, setVisualizadasPorSessao] = useState({});
-  const [sessaoEncerrada, setSessaoEncerrada] = useState(false);
 
   useEffect(() => {
     fetchSessions();
     const interval = setInterval(() => {
       refreshSessions();
-      if (selectedSession) {
-        loadMessages(selectedSession, true);
-      }
     }, 4000);
     return () => clearInterval(interval);
-  }, [selectedSession]);
+  }, []);
 
   const fetchSessions = async () => {
     const response = await axios.get(`${API_URL}/sessions`);
@@ -49,42 +45,36 @@ export default function PainelAtendente({ onVoltar }) {
     setTotalMessagesPorSessao(totals);
   };
 
-  const loadMessages = async (sessionId, silent = false) => {
+  const loadMessages = async (sessionId) => {
     const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
     setMessages(response.data);
-    if (!silent) setSelectedSession(sessionId);
-    const sessao = sessions.find(s => s.sessionId === sessionId);
-    setSessaoEncerrada(sessao?.status === 'encerrada');
+    setSelectedSession(sessionId);
     setVisualizadasPorSessao((prev) => ({
       ...prev,
-      [sessionId]: response.data.length
+      [sessionId]: totalMessagesPorSessao[sessionId] || response.data.length || 0
     }));
   };
 
   const sendMessage = async () => {
-    if (text.trim() && selectedSession && !sessaoEncerrada) {
+    if (text.trim() && selectedSession) {
       await axios.post(`${API_URL}/${selectedSession}/message`, {
         sender: 'Atendente: ',
         senderName: `${atendente}: `,
         text
       });
       setText('');
-      await loadMessages(selectedSession);
+      const updated = await axios.get(`${API_URL}/chat/${selectedSession}/messages`);
+      setMessages(updated.data);
+      setVisualizadasPorSessao((prev) => ({
+        ...prev,
+        [selectedSession]: updated.data.length
+      }));
     }
   };
 
-  const encerrarSessao = async () => {
-    if (selectedSession) {
-      await axios.post(`${API_URL}/${selectedSession}/message`, {
-        sender: 'Atendente: ',
-        senderName: `${atendente}: `,
-        text: 'Esta conversa foi encerrada. Caso precise de mais ajuda, inicie uma nova conversa no chat. 😊'
-      });
-      await axios.post(`${API_URL}/chat/${selectedSession}/end`);
-      await fetchSessions();
-      setSelectedSession(null);
-      setMessages([]);
-    }
+  const handleChangeAtendente = (e) => {
+    setAtendente(e.target.value);
+    localStorage.setItem('atendenteNome', e.target.value);
   };
 
   const exportarConversa = () => {
@@ -107,40 +97,33 @@ export default function PainelAtendente({ onVoltar }) {
     return matchKeyword && afterStart && beforeEnd;
   });
 
-  const sessionsAtivas = sessions.filter(s => s.status !== 'encerrada');
-  const sessionsEncerradas = sessions.filter(s => s.status === 'encerrada');
-
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center p-4 font-sans">
       <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg grid grid-cols-3">
         <aside className="col-span-1 border-r border-gray-200 p-4">
-          <h2 className="text-lg font-semibold mb-4">Sessões Ativas</h2>
+          <h2 className="text-lg font-semibold mb-4">Sessões</h2>
           <div className="mb-4">
             <label className="block text-sm text-gray-700 mb-1">Nome do atendente</label>
             <input
               type="text"
               value={atendente}
-              onChange={(e) => {
-                setAtendente(e.target.value);
-                localStorage.setItem('atendenteNome', e.target.value);
-              }}
+              onChange={handleChangeAtendente}
               className="w-full border border-gray-300 px-2 py-1 text-sm rounded"
               placeholder="Digite seu nome..."
             />
           </div>
-          {[...sessionsAtivas, ...sessionsEncerradas].map((session) => {
+          {sessions.map((session) => {
             const total = totalMessagesPorSessao[session.sessionId] || 0;
             const visualizadas = visualizadasPorSessao[session.sessionId] || 0;
             const hasNew = total > visualizadas && selectedSession !== session.sessionId;
-            const isEncerrada = session.status === 'encerrada';
             return (
               <button
                 key={session.sessionId}
                 onClick={() => loadMessages(session.sessionId)}
-                className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border ${selectedSession === session.sessionId ? 'bg-[#0669F7] text-white' : isEncerrada ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-800'}`}
+                className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border ${selectedSession === session.sessionId ? 'bg-[#0669F7] text-white' : 'bg-gray-100 text-gray-800'}`}
               >
                 Sessão {session.sessionId.slice(0, 8)}...{' '}
-                {hasNew && !isEncerrada && <span className="text-red-500">🔴</span>}<br />
+                {hasNew && <span className="text-red-500">🔴</span>}<br />
                 <span className="text-xs text-gray-500">{session.lastMessage}</span>
               </button>
             );
@@ -201,14 +184,12 @@ export default function PainelAtendente({ onVoltar }) {
                 type="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                disabled={sessaoEncerrada}
                 className="flex-1 px-4 py-2 text-sm outline-none border border-gray-300 rounded-md"
-                placeholder={sessaoEncerrada ? 'Esta sessão foi encerrada.' : 'Mensagem do atendente...'}
+                placeholder="Mensagem do atendente..."
               />
               <button
                 onClick={sendMessage}
-                disabled={sessaoEncerrada}
-                className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-6 py-2 rounded-md disabled:opacity-50"
+                className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-6 py-2 rounded-md"
               >
                 Enviar
               </button>
@@ -217,12 +198,6 @@ export default function PainelAtendente({ onVoltar }) {
                 className="bg-gray-200 hover:bg-gray-300 text-sm text-gray-700 px-4 py-2 rounded-md"
               >
                 Exportar
-              </button>
-              <button
-                onClick={encerrarSessao}
-                className="bg-red-100 hover:bg-red-200 text-sm text-red-600 px-4 py-2 rounded-md"
-              >
-                Encerrar
               </button>
             </div>
           )}
