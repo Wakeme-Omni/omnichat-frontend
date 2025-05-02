@@ -11,16 +11,19 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [isSessionClosed, setIsSessionClosed] = useState(false);
-  const [modoAtendente, setModoAtendente] = useState(false);
+  const [atendenteLogado, setAtendenteLogado] = useState(localStorage.getItem('atendenteAutenticado') || '');
+  const [nomeLogin, setNomeLogin] = useState('');
+  const [rota, setRota] = useState(window.location.pathname);
 
   useEffect(() => {
+    if (rota === '/atendente') return;
     const storedSession = localStorage.getItem('sessionId');
     if (storedSession) {
       setSessionId(storedSession);
     } else {
       createSession();
     }
-  }, []);
+  }, [rota]);
 
   const createSession = async () => {
     const response = await axios.post(`${API_URL}/chat`);
@@ -31,11 +34,12 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (rota === '/atendente') return;
     const interval = setInterval(() => {
       if (sessionId) fetchMessages();
     }, 4000);
     return () => clearInterval(interval);
-  }, [sessionId]);
+  }, [sessionId, rota]);
 
   const fetchMessages = async () => {
     try {
@@ -67,19 +71,44 @@ export default function App() {
     }
   };
 
-  if (modoAtendente) {
-    return <PainelAtendente onVoltar={() => setModoAtendente(false)} />;
+  if (rota === '/atendente' && !atendenteLogado) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="p-6 border rounded shadow-md w-full max-w-sm">
+          <h2 className="text-xl font-bold text-[#0669F7] mb-4">Login do Atendente</h2>
+          <input
+            type="text"
+            value={nomeLogin}
+            onChange={(e) => setNomeLogin(e.target.value)}
+            placeholder="Seu nome"
+            className="w-full mb-4 px-3 py-2 border rounded"
+          />
+          <button
+            onClick={() => {
+              if (nomeLogin.trim()) {
+                localStorage.setItem('atendenteAutenticado', nomeLogin);
+                setAtendenteLogado(nomeLogin);
+              }
+            }}
+            className="w-full bg-[#0669F7] text-white px-4 py-2 rounded hover:bg-[#1469E3]"
+          >
+            Entrar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (rota === '/atendente' && atendenteLogado) {
+    return <PainelAtendente atendente={atendenteLogado} onVoltar={() => {
+      setAtendenteLogado('');
+      localStorage.removeItem('atendenteAutenticado');
+    }} />;
   }
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center p-4">
       <h1 className="text-2xl font-bold text-[#0669F7] mb-2">Chat Online</h1>
-      <button
-        onClick={() => setModoAtendente(true)}
-        className="mb-4 text-sm text-[#0669F7] underline"
-      >
-        Acessar Painel do Atendente
-      </button>
       <div className="w-full max-w-md border border-[#207CFF] rounded-lg p-4 flex flex-col">
         <div className="flex-1 overflow-y-auto mb-4">
           {messages.map((msg) => (
