@@ -14,12 +14,21 @@ export default function App() {
   const [modoAtendente, setModoAtendente] = useState(false);
 
   useEffect(() => {
-    const createSession = async () => {
-      const response = await axios.post(`${API_URL}/chat`);
-      setSessionId(response.data.sessionId);
-    };
-    createSession();
+    const storedSession = localStorage.getItem('sessionId');
+    if (storedSession) {
+      setSessionId(storedSession);
+    } else {
+      createSession();
+    }
   }, []);
+
+  const createSession = async () => {
+    const response = await axios.post(`${API_URL}/chat`);
+    setSessionId(response.data.sessionId);
+    localStorage.setItem('sessionId', response.data.sessionId);
+    setMessages([]);
+    setIsSessionClosed(false);
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -59,7 +68,7 @@ export default function App() {
   };
 
   if (modoAtendente) {
-    return <PainelAtendente onVoltar={() => setModoAtendente(false)} forceSessionUpdate={fetchMessages} sessionId={sessionId} />;
+    return <PainelAtendente onVoltar={() => setModoAtendente(false)} />;
   }
 
   return (
@@ -83,7 +92,7 @@ export default function App() {
             </div>
           ))}
         </div>
-        <div className="flex">
+        <div className="flex mb-2">
           <input
             type="text"
             value={text}
@@ -100,6 +109,17 @@ export default function App() {
             Enviar
           </button>
         </div>
+        {isSessionClosed && (
+          <button
+            onClick={() => {
+              localStorage.removeItem('sessionId');
+              createSession();
+            }}
+            className="mt-2 text-sm text-[#0669F7] underline"
+          >
+            Iniciar nova conversa
+          </button>
+        )}
       </div>
     </div>
   );
