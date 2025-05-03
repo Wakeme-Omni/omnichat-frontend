@@ -17,6 +17,7 @@ export default function PainelAtendente({ onVoltar }) {
   const [atendente, setAtendente] = useState(localStorage.getItem('atendenteNome') || 'Ana');
   const [totalMessagesPorSessao, setTotalMessagesPorSessao] = useState({});
   const [visualizadasPorSessao, setVisualizadasPorSessao] = useState({});
+  const [erroOcupado, setErroOcupado] = useState('');
 
   useEffect(() => {
     fetchSessions();
@@ -50,10 +51,27 @@ export default function PainelAtendente({ onVoltar }) {
     }
   };
 
+  const claimSession = async (sessionId) => {
+    try {
+      await axios.post(`${API_URL}/chat/${sessionId}/claim`, { atendente });
+      return true;
+    } catch (err) {
+      if (err.response && err.response.status === 403) {
+        setErroOcupado(`Sessão já está ocupada por outro atendente.`);
+      }
+      return false;
+    }
+  };
+
   const loadMessages = async (sessionId, silent = false) => {
+    if (!silent) {
+      const success = await claimSession(sessionId);
+      if (!success) return;
+    }
     const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
     setMessages(response.data);
     setSelectedSession(sessionId);
+    setErroOcupado('');
     setVisualizadasPorSessao((prev) => ({
       ...prev,
       [sessionId]: totalMessagesPorSessao[sessionId] || response.data.length || 0
@@ -85,6 +103,7 @@ export default function PainelAtendente({ onVoltar }) {
         text: 'Esta conversa foi encerrada. Caso precise de mais ajuda, inicie uma nova conversa no chat. 😊'
       });
       await axios.post(`${API_URL}/chat/${selectedSession}/end`);
+      await axios.post(`${API_URL}/chat/${selectedSession}/release`);
       fetchSessions();
       setSelectedSession(null);
       setMessages([]);
@@ -148,18 +167,23 @@ export default function PainelAtendente({ onVoltar }) {
               const total = totalMessagesPorSessao[session.sessionId] || 0;
               const visualizadas = visualizadasPorSessao[session.sessionId] || 0;
               const hasNew = total > visualizadas && selectedSession !== session.sessionId;
+              const ocupado = session.ocupadoPor && session.ocupadoPor !== atendente;
               return (
                 <button
                   key={session.sessionId}
-                  onClick={() => loadMessages(session.sessionId)}
+                  onClick={() => !ocupado && loadMessages(session.sessionId)}
+                  disabled={ocupado}
                   className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border transition-all duration-200 ${
                     selectedSession === session.sessionId
                       ? 'bg-[#0669F7] text-white border-2 border-[#207CFF]'
+                      : ocupado
+                      ? 'bg-gray-200 text-gray-500 border border-gray-300 cursor-not-allowed'
                       : 'bg-gray-100 text-gray-800 border border-gray-300'
                   }`}
                 >
-                  Sessão {session.sessionId.slice(0, 8)}...{' '}
-                  {hasNew && <span className="text-red-500">🔴</span>}<br />
+                  Sessão {session.sessionId.slice(0, 8)}{' '}
+                  {ocupado && <span className="text-xs">🔒 {session.ocupadoPor}</span>}
+                  {hasNew && !ocupado && <span className="text-red-500"> 🔴</span>}<br />
                   <span className="text-xs text-gray-500">{session.lastMessage}</span>
                 </button>
               );
@@ -191,6 +215,9 @@ export default function PainelAtendente({ onVoltar }) {
 
         <main className="col-span-2 p-4 flex flex-col">
           <h2 className="text-lg font-semibold mb-2">Mensagens</h2>
+          {erroOcupado && (
+            <p className="text-red-600 text-sm bg-red-100 px-4 py-2 rounded mb-2">{erroOcupado}</p>
+          )}
 
           <div className="grid grid-cols-3 gap-2 mb-3">
             <input
