@@ -144,7 +144,11 @@ export default function PainelAtendente({ onVoltar }) {
                 <button
                   key={session.sessionId}
                   onClick={() => loadMessages(session.sessionId)}
-                  className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border ${selectedSession === session.sessionId ? 'bg-[#0669F7] text-white' : 'bg-gray-100 text-gray-800'}`}
+                  className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border transition-all duration-200 ${
+                    selectedSession === session.sessionId
+                      ? 'bg-[#0669F7] text-white border-2 border-[#207CFF]'
+                      : 'bg-gray-100 text-gray-800 border border-gray-300'
+                  }`}
                 >
                   Sessão {session.sessionId.slice(0, 8)}...{' '}
                   {hasNew && <span className="text-red-500">🔴</span>}<br />
@@ -160,7 +164,11 @@ export default function PainelAtendente({ onVoltar }) {
               <button
                 key={session.sessionId}
                 onClick={() => loadMessages(session.sessionId)}
-                className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border bg-gray-50 text-gray-500`}
+                className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border transition-all duration-200 ${
+                    selectedSession === session.sessionId
+                      ? 'bg-[#0669F7] text-white border-2 border-[#207CFF]'
+                      : 'bg-gray-50 text-gray-500 border border-gray-300'
+                  }`}
               >
                 Sessão {session.sessionId.slice(0, 8)}...<br />
                 <span className="text-xs text-gray-400">{session.lastMessage}</span>
