@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import PainelAtendente from './PainelAtendente';
+import LoginAtendente from './LoginAtendente';
 
 const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api';
 
@@ -11,9 +12,12 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [isSessionClosed, setIsSessionClosed] = useState(false);
-  const [atendenteLogado, setAtendenteLogado] = useState(localStorage.getItem('atendenteAutenticado') || '');
-  const [nomeLogin, setNomeLogin] = useState('');
+  const [atendenteLogado, setAtendenteLogado] = useState(localStorage.getItem('atendenteToken') || '');
   const [rota, setRota] = useState(window.location.pathname);
+
+  const [usuario, setUsuario] = useState('');
+  const [senha, setSenha] = useState('');
+  const [erroLogin, setErroLogin] = useState('');
 
   useEffect(() => {
     if (rota === '/atendente') return;
@@ -71,25 +75,42 @@ export default function App() {
     }
   };
 
+  const realizarLogin = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/login`, { usuario, senha });
+      if (res.data.success) {
+        localStorage.setItem('atendenteToken', res.data.token);
+        localStorage.setItem('atendenteNome', res.data.usuario);
+        setAtendenteLogado(res.data.usuario);
+        setErroLogin('');
+      }
+    } catch (e) {
+      setErroLogin('Usuário ou senha inválidos');
+    }
+  };
+
   if (rota === '/atendente' && !atendenteLogado) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="p-6 border rounded shadow-md w-full max-w-sm">
           <h2 className="text-xl font-bold text-[#0669F7] mb-4">Login do Atendente</h2>
+          {erroLogin && <p className="text-red-600 text-sm mb-2">{erroLogin}</p>}
           <input
             type="text"
-            value={nomeLogin}
-            onChange={(e) => setNomeLogin(e.target.value)}
-            placeholder="Seu nome"
+            value={usuario}
+            onChange={(e) => setUsuario(e.target.value)}
+            placeholder="Usuário"
+            className="w-full mb-3 px-3 py-2 border rounded"
+          />
+          <input
+            type="password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            placeholder="Senha"
             className="w-full mb-4 px-3 py-2 border rounded"
           />
           <button
-            onClick={() => {
-              if (nomeLogin.trim()) {
-                localStorage.setItem('atendenteAutenticado', nomeLogin);
-                setAtendenteLogado(nomeLogin);
-              }
-            }}
+            onClick={realizarLogin}
             className="w-full bg-[#0669F7] text-white px-4 py-2 rounded hover:bg-[#1469E3]"
           >
             Entrar
@@ -102,7 +123,8 @@ export default function App() {
   if (rota === '/atendente' && atendenteLogado) {
     return <PainelAtendente atendente={atendenteLogado} onVoltar={() => {
       setAtendenteLogado('');
-      localStorage.removeItem('atendenteAutenticado');
+      localStorage.removeItem('atendenteToken');
+      localStorage.removeItem('atendenteNome');
     }} />;
   }
 
