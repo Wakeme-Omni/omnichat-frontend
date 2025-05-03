@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { format } from 'date-fns';
 
 const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api';
 
@@ -115,6 +116,13 @@ export default function PainelAtendente({ onVoltar }) {
     return matchKeyword && afterStart && beforeEnd;
   });
 
+  const groupedMessages = filteredMessages.reduce((acc, msg) => {
+    const date = format(new Date(msg.timestamp), 'dd/MM/yyyy');
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(msg);
+    return acc;
+  }, {});
+
   const abertas = sessions.filter(s => s.status !== 'encerrada');
   const encerradas = sessions.filter(s => s.status === 'encerrada');
 
@@ -165,10 +173,10 @@ export default function PainelAtendente({ onVoltar }) {
                 key={session.sessionId}
                 onClick={() => loadMessages(session.sessionId)}
                 className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border transition-all duration-200 ${
-                    selectedSession === session.sessionId
-                      ? 'bg-[#0669F7] text-white border-2 border-[#207CFF]'
-                      : 'bg-gray-50 text-gray-500 border border-gray-300'
-                  }`}
+                  selectedSession === session.sessionId
+                    ? 'bg-[#0669F7] text-white border-2 border-[#207CFF]'
+                    : 'bg-gray-50 text-gray-500 border border-gray-300'
+                }`}
               >
                 Sessão {session.sessionId.slice(0, 8)}...<br />
                 <span className="text-xs text-gray-400">{session.lastMessage}</span>
@@ -206,22 +214,27 @@ export default function PainelAtendente({ onVoltar }) {
             />
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-2 mb-4 bg-[#f9fbfc] p-3 rounded-lg border border-gray-200">
-            {filteredMessages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`max-w-[75%] px-4 py-2 text-sm rounded-lg shadow-sm whitespace-pre-wrap
-                  ${msg.sender === 'Usuário: '
-                    ? 'ml-auto bg-[#0669F7] text-white'
-                    : 'mr-auto bg-[#e9f1ff] text-[#1e1e1e]'}
-                `}
-              >
-                {msg.senderName && (
-                  <span className="text-xs font-semibold block text-gray-500">
-                    {msg.senderName} - {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                )}
-                {msg.text}
+          <div className="flex-1 overflow-y-auto space-y-4 mb-4 bg-[#f9fbfc] p-3 rounded-lg border border-gray-200">
+            {Object.entries(groupedMessages).map(([date, msgs]) => (
+              <div key={date}>
+                <div className="text-center text-xs text-gray-400 my-2">──── {date} ────</div>
+                {msgs.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`max-w-[75%] px-4 py-2 text-sm rounded-lg shadow-sm whitespace-pre-wrap
+                      ${msg.sender === 'Usuário: '
+                        ? 'ml-auto bg-[#0669F7] text-white'
+                        : 'mr-auto bg-[#e9f1ff] text-[#1e1e1e]'}
+                    `}
+                  >
+                    {msg.senderName && (
+                      <span className="text-xs font-semibold block text-gray-500">
+                        {msg.senderName} - {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                    {msg.text}
+                  </div>
+                ))}
               </div>
             ))}
           </div>
