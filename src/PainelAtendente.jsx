@@ -115,11 +115,14 @@ export default function PainelAtendente({ onVoltar }) {
     return matchKeyword && afterStart && beforeEnd;
   });
 
+  const abertas = sessions.filter(s => s.status !== 'encerrada');
+  const encerradas = sessions.filter(s => s.status === 'encerrada');
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center p-4 font-sans">
       <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg grid grid-cols-3">
         <aside className="col-span-1 border-r border-gray-200 p-4">
-          <h2 className="text-lg font-semibold mb-4">Sessões</h2>
+          <h2 className="text-lg font-semibold mb-4">Painel do Atendente</h2>
           <div className="mb-4">
             <label className="block text-sm text-gray-700 mb-1">Nome do atendente</label>
             <input
@@ -130,22 +133,41 @@ export default function PainelAtendente({ onVoltar }) {
               placeholder="Digite seu nome..."
             />
           </div>
-          {sessions.map((session) => {
-            const total = totalMessagesPorSessao[session.sessionId] || 0;
-            const visualizadas = visualizadasPorSessao[session.sessionId] || 0;
-            const hasNew = total > visualizadas && selectedSession !== session.sessionId;
-            return (
+
+          <details open className="mb-4">
+            <summary className="cursor-pointer font-medium text-[#0669F7] mb-2">Conversas em Aberto</summary>
+            {abertas.map((session) => {
+              const total = totalMessagesPorSessao[session.sessionId] || 0;
+              const visualizadas = visualizadasPorSessao[session.sessionId] || 0;
+              const hasNew = total > visualizadas && selectedSession !== session.sessionId;
+              return (
+                <button
+                  key={session.sessionId}
+                  onClick={() => loadMessages(session.sessionId)}
+                  className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border ${selectedSession === session.sessionId ? 'bg-[#0669F7] text-white' : 'bg-gray-100 text-gray-800'}`}
+                >
+                  Sessão {session.sessionId.slice(0, 8)}...{' '}
+                  {hasNew && <span className="text-red-500">🔴</span>}<br />
+                  <span className="text-xs text-gray-500">{session.lastMessage}</span>
+                </button>
+              );
+            })}
+          </details>
+
+          <details>
+            <summary className="cursor-pointer font-medium text-[#888] mb-2">Conversas Encerradas</summary>
+            {encerradas.map((session) => (
               <button
                 key={session.sessionId}
                 onClick={() => loadMessages(session.sessionId)}
-                className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border ${selectedSession === session.sessionId ? 'bg-[#0669F7] text-white' : 'bg-gray-100 text-gray-800'}`}
+                className={`block w-full text-left mb-2 px-3 py-2 rounded-lg text-sm border bg-gray-50 text-gray-500`}
               >
-                Sessão {session.sessionId.slice(0, 8)}...{' '}
-                {hasNew && <span className="text-red-500">🔴</span>}<br />
-                <span className="text-xs text-gray-500">{session.lastMessage}</span>
+                Sessão {session.sessionId.slice(0, 8)}...<br />
+                <span className="text-xs text-gray-400">{session.lastMessage}</span>
               </button>
-            );
-          })}
+            ))}
+          </details>
+
           <button onClick={onVoltar} className="mt-6 text-sm text-[#0669F7] underline">
             ← Voltar ao chat
           </button>
