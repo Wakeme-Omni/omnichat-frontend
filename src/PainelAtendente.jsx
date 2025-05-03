@@ -23,7 +23,7 @@ export default function PainelAtendente({ onVoltar }) {
       refreshSessions();
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedSession]);
 
   const fetchSessions = async () => {
     const response = await axios.get(`${API_URL}/sessions`);
@@ -43,9 +43,13 @@ export default function PainelAtendente({ onVoltar }) {
       totals[s.sessionId] = s.totalMessages;
     });
     setTotalMessagesPorSessao(totals);
+
+    if (selectedSession) {
+      loadMessages(selectedSession, true);
+    }
   };
 
-  const loadMessages = async (sessionId) => {
+  const loadMessages = async (sessionId, silent = false) => {
     const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
     setMessages(response.data);
     setSelectedSession(sessionId);
