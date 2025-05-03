@@ -76,6 +76,20 @@ export default function PainelAtendente({ onVoltar }) {
     }
   };
 
+  const encerrarSessao = async () => {
+    if (selectedSession) {
+      await axios.post(`${API_URL}/${selectedSession}/message`, {
+        sender: 'Atendente: ',
+        senderName: `${atendente}: `,
+        text: 'Esta conversa foi encerrada. Caso precise de mais ajuda, inicie uma nova conversa no chat. 😊'
+      });
+      await axios.post(`${API_URL}/chat/${selectedSession}/end`);
+      fetchSessions();
+      setSelectedSession(null);
+      setMessages([]);
+    }
+  };
+
   const handleChangeAtendente = (e) => {
     setAtendente(e.target.value);
     localStorage.setItem('atendenteNome', e.target.value);
@@ -196,6 +210,12 @@ export default function PainelAtendente({ onVoltar }) {
                 className="bg-[#0669F7] hover:bg-[#207CFF] text-white text-sm font-medium px-6 py-2 rounded-md"
               >
                 Enviar
+              </button>
+              <button
+                onClick={encerrarSessao}
+                className="bg-red-100 hover:bg-red-200 text-sm text-red-600 px-4 py-2 rounded-md"
+              >
+                Encerrar
               </button>
               <button
                 onClick={exportarConversa}
