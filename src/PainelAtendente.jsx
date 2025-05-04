@@ -6,6 +6,11 @@ import { format } from 'date-fns';
 
 const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api';
 
+const authHeaders = () => {
+  const token = localStorage.getItem('atendenteToken');
+  return { headers: { Authorization: token } };
+};
+
 export default function PainelAtendente({ onVoltar }) {
   const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
@@ -28,7 +33,7 @@ export default function PainelAtendente({ onVoltar }) {
   }, [selectedSession]);
 
   const fetchSessions = async () => {
-    const response = await axios.get(`${API_URL}/sessions`);
+    const response = await axios.get(`${API_URL}/sessions`, authHeaders());
     setSessions(response.data);
     const totals = {};
     response.data.forEach(s => {
@@ -38,7 +43,7 @@ export default function PainelAtendente({ onVoltar }) {
   };
 
   const refreshSessions = async () => {
-    const response = await axios.get(`${API_URL}/sessions`);
+    const response = await axios.get(`${API_URL}/sessions`, authHeaders());
     setSessions(response.data);
     const totals = {};
     response.data.forEach(s => {
@@ -53,7 +58,7 @@ export default function PainelAtendente({ onVoltar }) {
 
   const claimSession = async (sessionId) => {
     try {
-      await axios.post(`${API_URL}/chat/${sessionId}/claim`, { atendente });
+      await axios.post(`${API_URL}/chat/${sessionId}/claim`, { atendente }, authHeaders());
       return true;
     } catch (err) {
       if (err.response && err.response.status === 403) {
@@ -102,8 +107,8 @@ export default function PainelAtendente({ onVoltar }) {
         senderName: `${atendente}: `,
         text: 'Esta conversa foi encerrada. Caso precise de mais ajuda, inicie uma nova conversa no chat. 😊'
       });
-      await axios.post(`${API_URL}/chat/${selectedSession}/end`);
-      await axios.post(`${API_URL}/chat/${selectedSession}/release`);
+      await axios.post(`${API_URL}/chat/${selectedSession}/end`, {}, authHeaders());
+      await axios.post(`${API_URL}/chat/${selectedSession}/release`, {}, authHeaders());
       fetchSessions();
       setSelectedSession(null);
       setMessages([]);
