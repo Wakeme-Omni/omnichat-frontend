@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api';
 
@@ -47,13 +49,18 @@ export default function PainelAtendente({ onVoltar }) {
     setSessions(response.data);
     const totals = {};
     response.data.forEach(s => {
+      const oldTotal = totalMessagesPorSessao[s.sessionId] || 0;
       totals[s.sessionId] = s.totalMessages;
+      if (
+        s.totalMessages > oldTotal &&
+        selectedSession !== s.sessionId &&
+        s.status !== 'encerrada'
+      ) {
+        toast.info(`📩 Nova mensagem na sessão ${s.sessionId.slice(0, 6)}`);
+      }
     });
     setTotalMessagesPorSessao(totals);
-
-    if (selectedSession) {
-      loadMessages(selectedSession, true);
-    }
+    if (selectedSession) loadMessages(selectedSession, true);
   };
 
   const claimSession = async (sessionId) => {
@@ -73,13 +80,13 @@ export default function PainelAtendente({ onVoltar }) {
       const success = await claimSession(sessionId);
       if (!success) return;
     }
-    const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`);
+    const response = await axios.get(`${API_URL}/chat/${sessionId}/messages`, authHeaders());
     setMessages(response.data);
     setSelectedSession(sessionId);
     setErroOcupado('');
     setVisualizadasPorSessao((prev) => ({
       ...prev,
-      [sessionId]: totalMessagesPorSessao[sessionId] || response.data.length || 0
+      [sessionId]: response.data.length
     }));
   };
 
@@ -89,9 +96,9 @@ export default function PainelAtendente({ onVoltar }) {
         sender: 'Atendente: ',
         senderName: `${atendente}: `,
         text
-      });
+      }, authHeaders());
       setText('');
-      const updated = await axios.get(`${API_URL}/chat/${selectedSession}/messages`);
+      const updated = await axios.get(`${API_URL}/chat/${selectedSession}/messages`, authHeaders());
       setMessages(updated.data);
       setVisualizadasPorSessao((prev) => ({
         ...prev,
@@ -106,7 +113,7 @@ export default function PainelAtendente({ onVoltar }) {
         sender: 'Atendente: ',
         senderName: `${atendente}: `,
         text: 'Esta conversa foi encerrada. Caso precise de mais ajuda, inicie uma nova conversa no chat. 😊'
-      });
+      }, authHeaders());
       await axios.post(`${API_URL}/chat/${selectedSession}/end`, {}, authHeaders());
       await axios.post(`${API_URL}/chat/${selectedSession}/release`, {}, authHeaders());
       fetchSessions();
@@ -152,6 +159,7 @@ export default function PainelAtendente({ onVoltar }) {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-start justify-center p-4 font-sans">
+      <ToastContainer position="bottom-right" autoClose={4000} />
       <div className="w-full max-w-6xl bg-white rounded-xl shadow-lg grid grid-cols-3">
         <aside className="col-span-1 border-r border-gray-200 p-4">
           <h2 className="text-lg font-semibold mb-4">Painel do Atendente</h2>
