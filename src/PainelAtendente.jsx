@@ -48,17 +48,23 @@ export default function PainelAtendente({ onVoltar }) {
     const response = await axios.get(`${API_URL}/sessions`, authHeaders());
     setSessions(response.data);
     const totals = {};
-    response.data.forEach(s => {
-      const oldTotal = totalMessagesPorSessao[s.sessionId] || 0;
-      totals[s.sessionId] = s.totalMessages;
-      if (
-        s.totalMessages > oldTotal &&
-        selectedSession !== s.sessionId &&
-        s.status !== 'encerrada'
-      ) {
-        toast.info(`📩 Nova mensagem na sessão ${s.sessionId.slice(0, 6)}`);
-      }
-    });
+	 response.data.forEach(s => {
+	   const oldVisualizadas = visualizadasPorSessao[s.sessionId] || 0;
+	   const oldTotal = totalMessagesPorSessao[s.sessionId] || 0;
+	   totals[s.sessionId] = s.totalMessages;
+
+	   const isNovaMensagem = s.totalMessages > oldTotal;
+	   const naoVisualizada = s.totalMessages > oldVisualizadas;
+
+	   if (
+	     isNovaMensagem &&
+	     naoVisualizada &&
+	     selectedSession !== s.sessionId &&
+	     s.status !== 'encerrada'
+	   ) {
+	     toast.info(`📩 Nova mensagem na sessão ${s.sessionId.slice(0, 6)}`);
+	   }
+	 });
     setTotalMessagesPorSessao(totals);
     if (selectedSession) loadMessages(selectedSession, true);
   };
