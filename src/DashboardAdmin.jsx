@@ -13,7 +13,7 @@ export default function DashboardAdmin() {
       const response = await axios.get(`${API_URL}/supervisao`);
       setDados(response.data);
     } catch (error) {
-      console.error('Erro ao buscar dados da supervisão:', error);
+      console.error('Erro ao carregar supervisão:', error);
     }
   };
 
@@ -23,48 +23,40 @@ export default function DashboardAdmin() {
     return () => clearInterval(interval);
   }, []);
 
-  if (!dados) return <p className="p-4">Carregando dashboard...</p>;
+  if (!dados) {
+    return <div className="p-8 text-center text-gray-500">Carregando dados...</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 font-sans">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6">
-        <h1 className="text-2xl font-bold text-[#0669F7] mb-4">Dashboard de Supervisão</h1>
+    <div className="min-h-screen bg-white p-8 font-sans">
+      <h1 className="text-2xl font-bold text-[#0669F7] mb-6">Dashboard de Supervisão</h1>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-[#E6F0FF] p-4 rounded-lg shadow">
-            <h2 className="text-sm text-gray-500">Sessões Abertas</h2>
-            <p className="text-2xl font-bold text-[#0669F7]">{dados.totalAberta}</p>
-          </div>
-          <div className="bg-[#FFF0F0] p-4 rounded-lg shadow">
-            <h2 className="text-sm text-gray-500">Sessões Encerradas</h2>
-            <p className="text-2xl font-bold text-red-500">{dados.totalEncerrada}</p>
-          </div>
-          <div className="bg-[#E8FFF0] p-4 rounded-lg shadow">
-            <h2 className="text-sm text-gray-500">Em Atendimento</h2>
-            <p className="text-2xl font-bold text-green-600">{dados.totalEmAtendimento}</p>
-          </div>
-          <div className="bg-[#FFFBE6] p-4 rounded-lg shadow">
-            <h2 className="text-sm text-gray-500">Aguardando Atendimento</h2>
-            <p className="text-2xl font-bold text-yellow-600">{dados.aguardandoAtendimento}</p>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <h2 className="text-lg font-semibold mb-2">Sessões por Atendente</h2>
-          {Object.keys(dados.porAtendente).length === 0 ? (
-            <p className="text-sm text-gray-500">Nenhum atendente ativo.</p>
-          ) : (
-            <ul className="space-y-2">
-              {Object.entries(dados.porAtendente).map(([nome, qtd]) => (
-                <li key={nome} className="flex justify-between border-b pb-1 text-sm">
-                  <span>{nome}</span>
-                  <span className="font-semibold text-[#0669F7]">{qtd}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+        <ResumoBox titulo="Conversas em Aberto" valor={dados.totalAberta} cor="bg-blue-100 text-blue-800" />
+        <ResumoBox titulo="Em Atendimento" valor={dados.totalEmAtendimento} cor="bg-green-100 text-green-800" />
+        <ResumoBox titulo="Aguardando Atendimento" valor={dados.aguardandoAtendimento} cor="bg-yellow-100 text-yellow-800" />
+        <ResumoBox titulo="Conversas Encerradas" valor={dados.totalEncerrada} cor="bg-gray-100 text-gray-800" />
       </div>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-4">Atendentes em Atendimento</h2>
+        <ul className="list-disc list-inside text-sm text-gray-700">
+          {Object.entries(dados.porAtendente).map(([nome, total]) => (
+            <li key={nome}>
+              <span className="font-medium">{nome}</span>: {total} conversa(s)
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function ResumoBox({ titulo, valor, cor }) {
+  return (
+    <div className={`p-4 rounded-lg shadow ${cor}`}>
+      <p className="text-sm font-medium mb-1">{titulo}</p>
+      <p className="text-2xl font-bold">{valor}</p>
     </div>
   );
 }
