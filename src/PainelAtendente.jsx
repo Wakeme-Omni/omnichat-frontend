@@ -105,6 +105,13 @@ export default function PainelAtendente({ onVoltar }) {
     notifiedSessions.current.delete(sessionId);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+  
   const sendMessage = async () => {
     if (text.trim() && selectedSession) {
       await axios.post(`${API_URL}/${selectedSession}/message`, {
