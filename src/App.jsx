@@ -75,6 +75,13 @@ export default function App() {
     }
   };
 
+  const handleKeyDown = (e) => {
+     if (e.key === 'Enter' && !e.shiftKey) {
+       e.preventDefault();
+       sendMessage();
+     }
+  };
+		
   const realizarLogin = async () => {
     try {
       const res = await axios.post(`${API_URL}/login`, { usuario, senha });
