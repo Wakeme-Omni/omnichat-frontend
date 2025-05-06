@@ -1,6 +1,6 @@
 // frontend/src/PainelAtendente.jsx
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { ToastContainer, toast } from 'react-toastify';
@@ -25,6 +25,7 @@ export default function PainelAtendente({ onVoltar }) {
   const [totalMessagesPorSessao, setTotalMessagesPorSessao] = useState({});
   const [visualizadasPorSessao, setVisualizadasPorSessao] = useState({});
   const [erroOcupado, setErroOcupado] = useState('');
+  const notifiedSessions = useRef(new Set());
 
   useEffect(() => {
     fetchSessions();
@@ -48,23 +49,30 @@ export default function PainelAtendente({ onVoltar }) {
     const response = await axios.get(`${API_URL}/sessions`, authHeaders());
     setSessions(response.data);
     const totals = {};
-	 response.data.forEach(s => {
-	   const oldVisualizadas = visualizadasPorSessao[s.sessionId] || 0;
-	   const oldTotal = totalMessagesPorSessao[s.sessionId] || 0;
-	   totals[s.sessionId] = s.totalMessages;
 
-	   const isNovaMensagem = s.totalMessages > oldTotal;
-	   const naoVisualizada = s.totalMessages > oldVisualizadas;
+    response.data.forEach(s => {
+      const oldVisualizadas = visualizadasPorSessao[s.sessionId] || 0;
+      const oldTotal = totalMessagesPorSessao[s.sessionId] || 0;
+      totals[s.sessionId] = s.totalMessages;
 
-	   if (
-	     isNovaMensagem &&
-	     naoVisualizada &&
-	     selectedSession !== s.sessionId &&
-	     s.status !== 'encerrada'
-	   ) {
-	     toast.info(`📩 Nova mensagem na sessão ${s.sessionId.slice(0, 6)}`);
-	   }
-	 });
+      const isNovaMensagem = s.totalMessages > oldTotal;
+      const naoVisualizada = s.totalMessages > oldVisualizadas;
+
+      if (
+        isNovaMensagem &&
+        naoVisualizada &&
+        selectedSession !== s.sessionId &&
+        s.status !== 'encerrada' &&
+        !notifiedSessions.current.has(s.sessionId)
+      ) {
+        toast.dismiss(s.sessionId); // evita duplicação
+        toast.info(`📩 Nova mensagem na sessão ${s.sessionId.slice(0, 6)}`, {
+          toastId: s.sessionId
+        });
+        notifiedSessions.current.add(s.sessionId);
+      }
+    });
+
     setTotalMessagesPorSessao(totals);
     if (selectedSession) loadMessages(selectedSession, true);
   };
@@ -94,6 +102,7 @@ export default function PainelAtendente({ onVoltar }) {
       ...prev,
       [sessionId]: response.data.length
     }));
+    notifiedSessions.current.delete(sessionId);
   };
 
   const sendMessage = async () => {
