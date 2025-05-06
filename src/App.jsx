@@ -76,10 +76,10 @@ export default function App() {
   };
 
   const handleKeyDown = (e) => {
-     if (e.key === 'Enter' && !e.shiftKey) {
-       e.preventDefault();
-       sendMessage();
-     }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // evita quebra de linha
+      sendMessage();
+    }
   };
 		
   const realizarLogin = async () => {
