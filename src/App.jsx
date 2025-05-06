@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import PainelAtendente from './PainelAtendente';
 import LoginAtendente from './LoginAtendente';
+import DashboardAdmin from './DashboardAdmin';
 
 const API_URL = 'https://omnichat-backend-dydpc9ddg5cnd3a9.brazilsouth-01.azurewebsites.net/api';
 
