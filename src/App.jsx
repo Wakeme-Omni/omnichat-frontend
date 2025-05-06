@@ -96,6 +96,10 @@ export default function App() {
     }
   };
 
+  if (rota === '/admin') {
+    return <DashboardAdmin />;
+  }
+  
   if (rota === '/atendente' && !atendenteLogado) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
